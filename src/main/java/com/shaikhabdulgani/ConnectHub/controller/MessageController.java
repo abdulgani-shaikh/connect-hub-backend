@@ -1,19 +1,18 @@
 package com.shaikhabdulgani.ConnectHub.controller;
 
 import com.shaikhabdulgani.ConnectHub.dto.MessageWithChatId;
-import com.shaikhabdulgani.ConnectHub.exception.CookieNotFoundException;
+import com.shaikhabdulgani.ConnectHub.exception.HeaderNotFoundException;
 import com.shaikhabdulgani.ConnectHub.exception.NotFoundException;
 import com.shaikhabdulgani.ConnectHub.exception.UnauthorizedAccessException;
 import com.shaikhabdulgani.ConnectHub.projection.InboxProjection;
 import com.shaikhabdulgani.ConnectHub.projection.MessageCountProject;
-import com.shaikhabdulgani.ConnectHub.service.CookieService;
+import com.shaikhabdulgani.ConnectHub.service.HeaderExtractorService;
 import com.shaikhabdulgani.ConnectHub.service.MessageService;
 import com.shaikhabdulgani.ConnectHub.service.UnreadMessageCountService;
 import com.shaikhabdulgani.ConnectHub.util.CustomPage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,7 +28,7 @@ public class MessageController {
 
     private final MessageService messageService;
     private final UnreadMessageCountService countService;
-    private final CookieService cookieService;
+    private final HeaderExtractorService headerExtractorService;
 
     /**
      * Retrieves all messages between two users.
@@ -56,8 +55,8 @@ public class MessageController {
             @RequestParam(value = "pageNumber",defaultValue = "0",required = false) int pageNumber,
             @RequestParam(value = "pageSize",defaultValue = "10",required = false) int pageSize,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        return messageService.getInbox(userId,pageNumber,pageSize,cookieService.extractJwtCookie(request));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        return messageService.getInbox(userId,pageNumber,pageSize, headerExtractorService.extractJwtHeader(request));
     }
 
     @GetMapping("/api/inbox/{userId}/count")

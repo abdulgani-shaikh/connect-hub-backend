@@ -4,12 +4,12 @@ import com.shaikhabdulgani.ConnectHub.dto.ApiResponse;
 import com.shaikhabdulgani.ConnectHub.dto.ChangePasswordRequest;
 import com.shaikhabdulgani.ConnectHub.dto.RelationWithId;
 import com.shaikhabdulgani.ConnectHub.dto.UpdateDescription;
-import com.shaikhabdulgani.ConnectHub.exception.CookieNotFoundException;
+import com.shaikhabdulgani.ConnectHub.exception.HeaderNotFoundException;
 import com.shaikhabdulgani.ConnectHub.exception.NotFoundException;
 import com.shaikhabdulgani.ConnectHub.exception.UnauthorizedAccessException;
 import com.shaikhabdulgani.ConnectHub.model.*;
 import com.shaikhabdulgani.ConnectHub.projection.*;
-import com.shaikhabdulgani.ConnectHub.service.CookieService;
+import com.shaikhabdulgani.ConnectHub.service.HeaderExtractorService;
 import com.shaikhabdulgani.ConnectHub.service.FriendService;
 import com.shaikhabdulgani.ConnectHub.service.PostService;
 import com.shaikhabdulgani.ConnectHub.service.UserService;
@@ -40,7 +40,7 @@ public class UserController {
     private final UserService userService;
     private final BasicUserService basicUserService;
     private final PostService postService;
-    private final CookieService cookieService;
+    private final HeaderExtractorService headerExtractorService;
     private final FriendService friendService;
 
     /**
@@ -76,7 +76,7 @@ public class UserController {
      * @param userId The ID of the user to check
      * @param request The HttpServletRequest object to fetch JWT token from cookies
      * @return An ApiResponse indicating whether the user is verified with a success flag
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws NotFoundException If the requested user is not found
      * @throws UnauthorizedAccessException If access is unauthorized
      */
@@ -92,7 +92,7 @@ public class UserController {
      * @param passwordRequest The ChangePasswordRequest object containing the new password and old password
      * @param request The HttpServletRequest object to fetch JWT token from cookies
      * @return An ApiResponse indicating the success or failure of the password change operation
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If access is unauthorized to change password or
      * if old password and new password doesn't match
      * @throws NotFoundException If the requested user is not found
@@ -102,9 +102,9 @@ public class UserController {
             @PathVariable String userId,
             @RequestBody @Valid ChangePasswordRequest passwordRequest,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
         return ApiResponse.success(
-                userService.changePassword(userId,passwordRequest, cookieService.extractJwtCookie(request))
+                userService.changePassword(userId,passwordRequest, headerExtractorService.extractJwtHeader(request))
         );
     }
 
@@ -115,7 +115,7 @@ public class UserController {
      * @param description The UpdateDescription object containing the new profile description
      * @param request The HttpServletRequest object to fetch JWT token from cookies
      * @return An ApiResponse indicating the success or failure of the profile description update operation
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If access is unauthorized to update the description
      * @throws NotFoundException If the requested user is not found
      */
@@ -124,9 +124,9 @@ public class UserController {
             @PathVariable String userId,
             @RequestBody @Valid UpdateDescription description,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
         return ApiResponse.success(
-                userService.updateDescription(userId,description, cookieService.extractJwtCookie(request))
+                userService.updateDescription(userId,description, headerExtractorService.extractJwtHeader(request))
         );
     }
 
@@ -137,7 +137,7 @@ public class UserController {
      * @param file The Image object containing the new image
      * @param request The HttpServletRequest object to fetch JWT token from cookies
      * @return An ApiResponse indicating the success or failure of the profile image update operation
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If access is unauthorized to update the profile image
      * @throws NotFoundException If the requested user is not found
      */
@@ -146,9 +146,9 @@ public class UserController {
             @PathVariable String userId,
             @RequestPart MultipartFile file,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException, IOException {
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException, IOException {
         return ApiResponse.success(
-                userService.updateProfile(userId,file, cookieService.extractJwtCookie(request))
+                userService.updateProfile(userId,file, headerExtractorService.extractJwtHeader(request))
         );
     }
 
@@ -159,7 +159,7 @@ public class UserController {
      * @param file The Image object containing the new cover image
      * @param request The HttpServletRequest object to fetch JWT token from cookies
      * @return An ApiResponse indicating the success or failure of the cover image update operation
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If access is unauthorized to update the cover image
      * @throws NotFoundException If the requested user is not found
      */
@@ -168,9 +168,9 @@ public class UserController {
             @PathVariable String userId,
             @RequestPart MultipartFile file,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException, IOException {
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException, IOException {
         return ApiResponse.success(
-                userService.updateCover(userId,file, cookieService.extractJwtCookie(request))
+                userService.updateCover(userId,file, headerExtractorService.extractJwtHeader(request))
         );
     }
 
@@ -183,7 +183,7 @@ public class UserController {
      * @param request The HttpServletRequest object to fetch JWT token from cookies
      * @return A list of PostProjection objects containing post information such as post image, post text, etc
      * @throws NotFoundException If the user is not found
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If access is unauthorized
      */
     @GetMapping("/{userId}/feed")
@@ -192,8 +192,8 @@ public class UserController {
             @RequestParam(value = "pageNumber",defaultValue = "0",required = false) int pageNumber,
             @RequestParam(value = "pageSize",defaultValue = "10",required = false) int pageSize,
             HttpServletRequest request
-    ) throws NotFoundException, CookieNotFoundException, UnauthorizedAccessException {
-        return postService.getUserFeed(userId, cookieService.extractJwtCookie(request), pageNumber,pageSize);
+    ) throws NotFoundException, HeaderNotFoundException, UnauthorizedAccessException {
+        return postService.getUserFeed(userId, headerExtractorService.extractJwtHeader(request), pageNumber,pageSize);
     }
 
     /**
@@ -240,7 +240,7 @@ public class UserController {
      * @param request The HttpServletRequest object to fetch JWT token from cookies
      * @return A CustomPage object containing the user's bookmarks
      * @throws NotFoundException If the user is not found
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If access is unauthorized
      */
     @GetMapping("/{userId}/bookmarks")
@@ -249,8 +249,8 @@ public class UserController {
             @RequestParam(value = "pageNumber",defaultValue = "0",required = false) int pageNumber,
             @RequestParam(value = "pageSize",defaultValue = "10",required = false) int pageSize,
             HttpServletRequest request
-    ) throws NotFoundException, CookieNotFoundException, UnauthorizedAccessException {
-        return postService.getAllBookmarkedPost(userId, cookieService.extractJwtCookie(request),pageNumber,pageSize);
+    ) throws NotFoundException, HeaderNotFoundException, UnauthorizedAccessException {
+        return postService.getAllBookmarkedPost(userId, headerExtractorService.extractJwtHeader(request),pageNumber,pageSize);
     }
 
     /**
@@ -281,7 +281,7 @@ public class UserController {
      * @param request The HttpServletRequest object to fetch JWT token from cookies
      * @return A CustomPage object containing the user's friend requests
      * @throws NotFoundException If the user is not found
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If access is unauthorized
      */
     @GetMapping("/{userId}/friend-requests")
@@ -290,8 +290,8 @@ public class UserController {
             @RequestParam(value = "pageNumber",defaultValue = "0",required = false) int pageNumber,
             @RequestParam(value = "pageSize",defaultValue = "10",required = false) int pageSize,
             HttpServletRequest request
-    ) throws NotFoundException, CookieNotFoundException, UnauthorizedAccessException {
-        return friendService.getAllFriendsRequest(userId, cookieService.extractJwtCookie(request),pageNumber,pageSize);
+    ) throws NotFoundException, HeaderNotFoundException, UnauthorizedAccessException {
+        return friendService.getAllFriendsRequest(userId, headerExtractorService.extractJwtHeader(request),pageNumber,pageSize);
     }
 
 }

@@ -1,7 +1,6 @@
 package com.shaikhabdulgani.ConnectHub.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shaikhabdulgani.ConnectHub.service.CookieService;
+import com.shaikhabdulgani.ConnectHub.service.HeaderExtractorService;
 import com.shaikhabdulgani.ConnectHub.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -9,28 +8,14 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.converter.*;
-import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.security.config.annotation.web.socket.AbstractSecurityWebSocketMessageBrokerConfigurer;
-import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurationSupport;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.server.HandshakeFailureException;
-import org.springframework.web.socket.server.HandshakeHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
-import java.util.List;
 import java.util.Map;
-
-import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON;
 
 /**
  * Configuration class for WebSocket messaging.
@@ -41,7 +26,7 @@ import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtService jwtService;
-    private final CookieService cookieService;
+    private final HeaderExtractorService headerExtractorService;
 
     /**
      * Configures message broker to enable communication between clients and server.
@@ -74,7 +59,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
                 try{
                     ServletServerHttpRequest req = (ServletServerHttpRequest)request;
-                    String jwtToken = cookieService.extractJwtCookie(req.getServletRequest());
+                    String jwtToken = headerExtractorService.extractJwtHeader(req.getServletRequest());
                     jwtService.extractUsername(jwtToken);
                     return true;
                 }catch (Exception e){

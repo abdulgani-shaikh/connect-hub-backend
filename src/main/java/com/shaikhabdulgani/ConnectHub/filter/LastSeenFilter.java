@@ -1,6 +1,6 @@
 package com.shaikhabdulgani.ConnectHub.filter;
 
-import com.shaikhabdulgani.ConnectHub.service.CookieService;
+import com.shaikhabdulgani.ConnectHub.service.HeaderExtractorService;
 import com.shaikhabdulgani.ConnectHub.service.JwtService;
 import com.shaikhabdulgani.ConnectHub.service.BasicUserService;
 import jakarta.servlet.FilterChain;
@@ -26,7 +26,7 @@ public class LastSeenFilter extends OncePerRequestFilter {
     private BasicUserService basicUserService;
 
     @Autowired
-    private CookieService cookieService;
+    private HeaderExtractorService headerExtractorService;
 
     @Autowired
     private JwtService jwtService;
@@ -43,7 +43,7 @@ public class LastSeenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
-            basicUserService.updateLastSeen(jwtService.extractUsername(cookieService.extractJwtCookie(request)));
+            basicUserService.updateLastSeen(jwtService.extractUsername(headerExtractorService.extractJwtHeader(request)));
         } catch (Exception ignored) {}
         filterChain.doFilter(request,response);
     }

@@ -99,9 +99,9 @@ public class AppAdvice {
      * @param ex The CookieNotFoundException instance
      * @return An ApiError object representing the missing cookie
      */
-    @ExceptionHandler(CookieNotFoundException.class)
+    @ExceptionHandler(HeaderNotFoundException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleCookieNotFoundException(CookieNotFoundException ex){
+    public ApiError handleCookieNotFoundException(HeaderNotFoundException ex){
         return new ApiError(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 

@@ -4,14 +4,14 @@ import com.shaikhabdulgani.ConnectHub.dto.ApiResponse;
 import com.shaikhabdulgani.ConnectHub.dto.LikedAndBookmarkedDto;
 import com.shaikhabdulgani.ConnectHub.dto.NewComment;
 import com.shaikhabdulgani.ConnectHub.exception.BadRequestException;
-import com.shaikhabdulgani.ConnectHub.exception.CookieNotFoundException;
+import com.shaikhabdulgani.ConnectHub.exception.HeaderNotFoundException;
 import com.shaikhabdulgani.ConnectHub.exception.NotFoundException;
 import com.shaikhabdulgani.ConnectHub.exception.UnauthorizedAccessException;
 import com.shaikhabdulgani.ConnectHub.model.Comment;
 import com.shaikhabdulgani.ConnectHub.model.Post;
 import com.shaikhabdulgani.ConnectHub.projection.CommentProjection;
 import com.shaikhabdulgani.ConnectHub.projection.PostProjection;
-import com.shaikhabdulgani.ConnectHub.service.CookieService;
+import com.shaikhabdulgani.ConnectHub.service.HeaderExtractorService;
 import com.shaikhabdulgani.ConnectHub.service.PostService;
 import com.shaikhabdulgani.ConnectHub.util.CustomPage;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +35,7 @@ public class PostController {
      * */
 
     @Autowired
-    private CookieService cookieService;
+    private HeaderExtractorService headerExtractorService;
 
     @Autowired
     private PostService postService;
@@ -48,7 +48,7 @@ public class PostController {
      * @param text The post information containing details like content.
      * @param request  The HttpServletRequest to extract JWT cookie.
      * @return An ApiResponse containing the newly created post.
-     * @throws CookieNotFoundException      If JWT cookie is not found in the request.
+     * @throws HeaderNotFoundException      If JWT cookie is not found in the request.
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException            If the requested resource is not found.
      * @throws BadRequestException          If the request is malformed or contains invalid data.
@@ -60,8 +60,8 @@ public class PostController {
             @RequestPart(required = false) String text,
             @RequestPart(required = false) MultipartFile image,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException, BadRequestException, IOException {
-        return ApiResponse.success(postService.uploadNewPost(image,userId,text,cookieService.extractJwtCookie(request)));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException, BadRequestException, IOException {
+        return ApiResponse.success(postService.uploadNewPost(image,userId,text, headerExtractorService.extractJwtHeader(request)));
     }
 
     /**
@@ -82,7 +82,7 @@ public class PostController {
      * @param postId  The unique identifier of the post to be liked.
      * @param userId  The unique identifier of the user liking the post.
      * @param request The HttpServletRequest to extract JWT cookie.
-     * @throws CookieNotFoundException      If JWT cookie is not found in the request.
+     * @throws HeaderNotFoundException      If JWT cookie is not found in the request.
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException            If the requested resource is not found.
      */
@@ -91,8 +91,8 @@ public class PostController {
             @PathVariable String postId,
             @PathVariable String userId,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        postService.postLiked(postId,userId, cookieService.extractJwtCookie(request));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        postService.postLiked(postId,userId, headerExtractorService.extractJwtHeader(request));
     }
 
     /**
@@ -101,7 +101,7 @@ public class PostController {
      * @param postId  The unique identifier of the post to be unliked.
      * @param userId  The unique identifier of the user unliking the post.
      * @param request The HttpServletRequest to extract JWT cookie.
-     * @throws CookieNotFoundException      If JWT cookie is not found in the request.
+     * @throws HeaderNotFoundException      If JWT cookie is not found in the request.
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException            If the requested resource is not found.
      */
@@ -110,8 +110,8 @@ public class PostController {
             @PathVariable String postId,
             @PathVariable String userId,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        postService.postUnliked(postId,userId, cookieService.extractJwtCookie(request));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        postService.postUnliked(postId,userId, headerExtractorService.extractJwtHeader(request));
     }
 
     /**
@@ -121,7 +121,7 @@ public class PostController {
      * @param userId  The unique identifier of the user.
      * @param request The HttpServletRequest to extract JWT cookie.
      * @return An ApiResponse containing a boolean indicating if the post is liked by the user.
-     * @throws CookieNotFoundException      If JWT cookie is not found in the request.
+     * @throws HeaderNotFoundException      If JWT cookie is not found in the request.
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException            If the requested resource is not found.
      */
@@ -130,8 +130,8 @@ public class PostController {
             @PathVariable String postId,
             @PathVariable String userId,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        return ApiResponse.success(postService.isLiked(postId,userId, cookieService.extractJwtCookie(request)));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        return ApiResponse.success(postService.isLiked(postId,userId, headerExtractorService.extractJwtHeader(request)));
     }
 
     /**
@@ -140,7 +140,7 @@ public class PostController {
      * @param postId  The unique identifier of the post to be bookmarked.
      * @param userId  The unique identifier of the user bookmarking the post.
      * @param request The HttpServletRequest to extract JWT cookie.
-     * @throws CookieNotFoundException      If JWT cookie is not found in the request.
+     * @throws HeaderNotFoundException      If JWT cookie is not found in the request.
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException            If the requested resource is not found.
      */
@@ -149,8 +149,8 @@ public class PostController {
             @PathVariable String postId,
             @PathVariable String userId,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        postService.bookmark(postId,userId, cookieService.extractJwtCookie(request));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        postService.bookmark(postId,userId, headerExtractorService.extractJwtHeader(request));
     }
 
     /**
@@ -159,7 +159,7 @@ public class PostController {
      * @param postId  The unique identifier of the post to remove the bookmark from.
      * @param userId  The unique identifier of the user removing the bookmark.
      * @param request The HttpServletRequest to extract JWT cookie.
-     * @throws CookieNotFoundException      If JWT cookie is not found in the request.
+     * @throws HeaderNotFoundException      If JWT cookie is not found in the request.
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException            If the requested resource is not found.
      */
@@ -168,8 +168,8 @@ public class PostController {
             @PathVariable String postId,
             @PathVariable String userId,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        postService.removeBookmark(postId,userId, cookieService.extractJwtCookie(request));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        postService.removeBookmark(postId,userId, headerExtractorService.extractJwtHeader(request));
     }
 
     /**
@@ -179,7 +179,7 @@ public class PostController {
      * @param userId  The unique identifier of the user.
      * @param request The HttpServletRequest to extract JWT cookie.
      * @return An ApiResponse containing a boolean indicating if the post is bookmarked by the user.
-     * @throws CookieNotFoundException      If JWT cookie is not found in the request.
+     * @throws HeaderNotFoundException      If JWT cookie is not found in the request.
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException            If the requested resource is not found.
      */
@@ -188,8 +188,8 @@ public class PostController {
             @PathVariable String postId,
             @PathVariable String userId,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        return ApiResponse.success(postService.isBookmarked(postId,userId, cookieService.extractJwtCookie(request)));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        return ApiResponse.success(postService.isBookmarked(postId,userId, headerExtractorService.extractJwtHeader(request)));
     }
 
     /**
@@ -199,7 +199,7 @@ public class PostController {
      * @param userId The ID of the user
      * @param request The HttpServletRequest object
      * @return A LikedAndBookmarkedDto containing information about the post's likes and bookmarks
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException If the user or post is not found
      */
@@ -208,8 +208,8 @@ public class PostController {
             @PathVariable String postId,
             @PathVariable String userId,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        return postService.isLikedAndBookmarked(postId,userId, cookieService.extractJwtCookie(request));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        return postService.isLikedAndBookmarked(postId,userId, headerExtractorService.extractJwtHeader(request));
     }
 
     /**
@@ -219,7 +219,7 @@ public class PostController {
      * @param newComment The NewComment object containing user ID and comment
      * @param request The HttpServletRequest object
      * @return The posted comment
-     * @throws CookieNotFoundException If the JWT cookie is not found
+     * @throws HeaderNotFoundException If the JWT cookie is not found
      * @throws UnauthorizedAccessException If the user is not authorized to perform the operation.
      * @throws NotFoundException If the user or post is not found
      */
@@ -228,8 +228,8 @@ public class PostController {
             @PathVariable String postId,
             @RequestBody @Valid NewComment newComment,
             HttpServletRequest request
-    ) throws CookieNotFoundException, UnauthorizedAccessException, NotFoundException {
-        return postService.postComment(postId,newComment, cookieService.extractJwtCookie(request));
+    ) throws HeaderNotFoundException, UnauthorizedAccessException, NotFoundException {
+        return postService.postComment(postId,newComment, headerExtractorService.extractJwtHeader(request));
     }
 
 

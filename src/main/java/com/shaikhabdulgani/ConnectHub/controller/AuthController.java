@@ -1,14 +1,9 @@
 package com.shaikhabdulgani.ConnectHub.controller;
 
-import com.shaikhabdulgani.ConnectHub.dto.ApiResponse;
-import com.shaikhabdulgani.ConnectHub.dto.LoginDto;
-import com.shaikhabdulgani.ConnectHub.dto.SignUpDto;
-import com.shaikhabdulgani.ConnectHub.dto.VerifyOtpRequest;
+import com.shaikhabdulgani.ConnectHub.dto.*;
 import com.shaikhabdulgani.ConnectHub.exception.*;
 import com.shaikhabdulgani.ConnectHub.model.User;
-import com.shaikhabdulgani.ConnectHub.service.CookieService;
-import com.shaikhabdulgani.ConnectHub.service.UserService;
-import com.shaikhabdulgani.ConnectHub.service.BasicUserService;
+import com.shaikhabdulgani.ConnectHub.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -30,17 +25,17 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class AuthController {
 
-    private final CookieService cookieService;
     private final BasicUserService basicUserService;
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
+    private final JwtService jwtService;
 
     /**
      * Handles the user login process by authenticating the user's credentials.
      * If authentication is successful, generates and adds JWT and user ID cookies
      * to the response, clearing the user's password before returning the user information.
      *
-     * @param response   The HttpServletResponse to add cookies to.
      * @param loginDto   The LoginDto containing user credentials for login.
      * @return The authenticated User information with sensitive data cleared.
      * @throws NotFoundException           If the user is not found.
@@ -48,10 +43,9 @@ public class AuthController {
      */
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public User login(
-            HttpServletResponse response,
+    public UserWithTokenDto login(
             @RequestBody @Valid LoginDto loginDto
-            ) throws NotFoundException, UnauthorizedAccessException {
+    ) throws NotFoundException, UnauthorizedAccessException {
 
         User user = basicUserService.getUser(loginDto.getCredential(),loginDto.getAuthMethod());
         Authentication authentication = authenticationManager
@@ -63,11 +57,13 @@ public class AuthController {
         if (!authentication.isAuthenticated()){
             throw new UnauthorizedAccessException("user is not authenticated");
         }
-        response.addCookie(cookieService.generateJwtCookie(user.getUsername()));
-        response.addCookie(cookieService.generateRefreshTokenCookie(user.getUserId()));
-        response.addCookie(cookieService.generateUserIdCookie(user.getUserId()));
+
         user.clearPassword();
-        return user;
+        return UserWithTokenDto.builder()
+                .refreshToken(refreshTokenService.generateRefreshToken(user.getUserId()).getRefreshToken())
+                .token(jwtService.generateToken(user.getUsername()))
+                .user(user)
+                .build();
     }
 
     /**
@@ -75,24 +71,22 @@ public class AuthController {
      * Registers the user, generates and adds JWT and user ID cookies to the response,
      * clearing the user's password before returning the user information.
      *
-     * @param response   The HttpServletResponse to add cookies to.
      * @param signUpDto  The SignUpDto containing user information for registration.
      * @return The registered User information with sensitive data cleared.
      * @throws AlreadyExistsException If the username or email already exists in the database.
      */
     @PostMapping("/sign-up")
     @ResponseStatus(HttpStatus.CREATED)
-    public User signUp(
-            HttpServletResponse response,
+    public UserWithTokenDto signUp(
             @RequestBody @Valid SignUpDto signUpDto
     ) throws AlreadyExistsException{
         User user = userService.registerUser(signUpDto);
 
-        response.addCookie(cookieService.generateJwtCookie(user.getUsername()));
-        response.addCookie(cookieService.generateRefreshTokenCookie(user.getUserId()));
-        response.addCookie(cookieService.generateUserIdCookie(user.getUserId()));
-
-        return user;
+        return UserWithTokenDto.builder()
+                .refreshToken(refreshTokenService.generateRefreshToken(user.getUserId()).getRefreshToken())
+                .token(jwtService.generateToken(user.getUsername()))
+                .user(user)
+                .build();
     }
 
     /**
@@ -104,9 +98,9 @@ public class AuthController {
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.OK)
     public void logout(HttpServletRequest request, HttpServletResponse response){
-        response.addCookie(cookieService.deleteJwtCookie());
-        response.addCookie(cookieService.deleteRefreshTokenCookie(request));
-        response.addCookie(cookieService.deleteUserIdCookie());
+//        response.addCookie(cookieService.deleteJwtCookie());
+//        response.addCookie(cookieService.deleteRefreshTokenCookie(request));
+//        response.addCookie(cookieService.deleteUserIdCookie());
     }
 
     /**
@@ -171,8 +165,8 @@ public class AuthController {
         return ApiResponse.success(userService.verifyOTP(email,req));
     }
 
-    @GetMapping("/refresh-token")
-    public ApiResponse<Boolean> useRefreshToken(HttpServletRequest request,HttpServletResponse response) throws UnauthorizedAccessException, NotFoundException, CookieNotFoundException {
-        return ApiResponse.success(userService.consumeRefreshToken(request,response));
+    @GetMapping("/{userId}/refresh-token")
+    public ApiResponse<TokenDto> useRefreshToken(@PathVariable String userId, HttpServletRequest request) throws UnauthorizedAccessException, NotFoundException, HeaderNotFoundException {
+        return ApiResponse.success(userService.consumeRefreshToken(request,userId));
     }
 }

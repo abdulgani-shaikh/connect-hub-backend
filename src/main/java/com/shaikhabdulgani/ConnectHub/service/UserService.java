@@ -6,7 +6,6 @@ import com.shaikhabdulgani.ConnectHub.model.Otp;
 import com.shaikhabdulgani.ConnectHub.model.Token;
 import com.shaikhabdulgani.ConnectHub.model.User;
 import com.shaikhabdulgani.ConnectHub.util.DefaultDescription;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +24,9 @@ public class UserService {
     private final EmailService emailService;
     private final ImageService imageService;
     private final OtpService otpService;
-    private final CookieService cookieService;
+    private final HeaderExtractorService headerExtractorService;
     private final RefreshTokenService refreshTokenService;
+    private final JwtService jwtService;
 
     public User registerUser(SignUpDto req) throws AlreadyExistsException {
 
@@ -155,9 +155,8 @@ public class UserService {
         return true;
     }
 
-    public boolean consumeRefreshToken(HttpServletRequest request, HttpServletResponse response) throws CookieNotFoundException, NotFoundException, UnauthorizedAccessException {
-        String refreshToken = cookieService.extractRefreshTokenCookie(request);
-        String userId = cookieService.extractUserIdCookie(request);
+    public TokenDto consumeRefreshToken(HttpServletRequest request, String userId) throws HeaderNotFoundException, NotFoundException, UnauthorizedAccessException {
+        String refreshToken = headerExtractorService.extractRefreshTokenHeader(request);
 
         if (!refreshTokenService.validateToken(userId, refreshToken)){
             throw new UnauthorizedAccessException("Either refresh token is invalid or refresh token is expired.");
@@ -165,9 +164,11 @@ public class UserService {
         refreshTokenService.delete(refreshToken);
         User user = basicUserService.getById(userId);
 
-        response.addCookie(cookieService.generateJwtCookie(user.getUsername()));
-        response.addCookie(cookieService.generateRefreshTokenCookie(user.getUserId()));
+        return TokenDto
+                .builder()
+                .refreshToken(refreshTokenService.generateRefreshToken(userId).getRefreshToken())
+                .token(jwtService.generateToken(user.getUsername()))
+                .build();
 
-        return true;
     }
 }
